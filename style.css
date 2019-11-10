@@ -1,0 +1,16 @@
+.arrowkey {
+  width:18px;
+  text-align:center;
+  border-radius:3px;
+  background-color:lightgray;
+}
+.highlight {
+  background-color:pink;
+}
+.hidden {
+  visibility:hidden;
+}
+div#controls {
+    float: right;
+    margin: 50px;
+}
