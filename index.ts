@@ -105,37 +105,6 @@ function asteroidsObservable1() {
        `translate(${state.x},${state.y}) rotate(${state.angle+=a})`)
   )
 }
-function asteroidsObservable2() {
-  interface State {
-    readonly x: number;
-    readonly y: number;
-    readonly angle: number;
-  }
-  const initialState: State = { x: 100, y: 100, angle: 0};
-  function rotate(s:State, angleDelta:number): State {
-    return { ...s,
-      angle: s.angle + angleDelta
-    }
-  }
-  function updateView(state:State): void {
-    const ship = document.getElementById("ship")!;
-    ship.setAttribute('transform',
-     `translate(${state.x},${state.y}) rotate(${state.angle})`)
-  }
-  fromEvent<KeyboardEvent>(document, 'keydown')
-    .pipe(
-      filter(({key})=>key === 'ArrowLeft' || key === 'ArrowRight'),
-      filter(({repeat})=>!repeat),
-      flatMap(d=>interval(10).pipe(
-        takeUntil(fromEvent<KeyboardEvent>(document, 'keyup').pipe(
-          filter(({key})=>key === d.key)
-        )),
-        map(_=>d))
-      ),
-      map(d=>d.key==='ArrowLeft'?-1:1),
-      scan(rotate, initialState))
-    .subscribe(updateView)
-}
 
 //window.onload = asteroids;
 setTimeout(asteroids, 0)
