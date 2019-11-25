@@ -14,7 +14,7 @@ type Event = 'keydown' | 'keyup'
 
 function asteroids() {
   class Tick { constructor(public readonly elapsed:number) {} }
-  class Rotate { constructor(public readonly angle:number) {} }
+  class Rotate { constructor(public readonly direction:number) {} }
   class Thrust { constructor(public readonly on:boolean) {} }
   
   const keyObservable = <T>(e:Event, k:Key, result:()=>T)=>
@@ -30,31 +30,35 @@ function asteroids() {
     startThrust = keyObservable('keydown','ArrowUp', ()=>new Thrust(true)),
     stopThrust = keyObservable('keyup','ArrowUp', ()=>new Thrust(false))
 
-  interface State {
-    readonly pos:Vec, 
-    readonly vel:Vec,
-    readonly thrust:boolean,
-    readonly angle:number,
-    readonly rotation:number,
-    readonly torque:number
-  }
+  type State = Readonly<{
+    pos:Vec, 
+    vel:Vec,
+    acc:Vec,
+    angle:number,
+    rotation:number,
+    torque:number
+  }>
   
   const initialState:State = {
       pos: new Vec(CanvasSize/2,CanvasSize/2), 
       vel: Vec.Zero, 
-      thrust: false, 
+      acc: Vec.Zero, 
       angle:0,
       rotation:0,
       torque:0
   }
-  const reduceState = (s:State, e:Rotate|Thrust|Tick)=>
-    e instanceof Rotate ? {...s, torque:e.angle } :
-    e instanceof Thrust ? {...s, thrust:e.on } : 
-    {...s,
+  const     
+    reduceState = (s:State, e:Rotate|Thrust|Tick)=>
+        e instanceof Rotate ? {...s,
+      torque:e.direction
+    } :
+    e instanceof Thrust ? {...s,
+      acc:e.on?Vec.unitVecInDirection(s.angle).scale(0.05):Vec.Zero
+    } : {...s,
       rotation: s.rotation+s.torque,
       angle:s.angle+s.rotation,
-      pos: torusWrap(s.pos.sub(s.vel)),
-      vel:s.thrust?s.vel.sub(Vec.unitVecInDirection(s.angle).scale(0.05)):s.vel
+      pos: torusWrap(s.pos.add(s.vel)),
+      vel:s.vel.add(s.acc)
     };
   interval(10)
     .pipe(
@@ -68,20 +72,13 @@ function asteroids() {
   function updateView(s: State) {
     const 
       ship = document.getElementById("ship")!,
-      leftThruster = document.getElementById("leftThrust")!,
-      rightThruster = document.getElementById("rightThrust")!,
-      thruster = document.getElementById("thruster")!,
-      show = (e:HTMLElement) => e.classList.remove('hidden'),
-      hide = (e:HTMLElement) => e.classList.add('hidden');
+      show = (id:string,condition:boolean)=>((e:HTMLElement) => 
+        condition ? e.classList.remove('hidden')
+                  : e.classList.add('hidden'))(document.getElementById(id)!);
+    show("leftThrust",  s.torque<0);
+    show("rightThrust", s.torque>0);
+    show("thruster",    s.acc.len()>0); 
     ship.setAttribute('transform', `translate(${s.pos.x},${s.pos.y}) rotate(${s.angle})`);
-    if (s.torque < 0) show(leftThruster);
-    else if (s.torque > 0) show(rightThruster);
-    else {
-      hide(leftThruster);
-      hide(rightThruster);
-    }
-    if (s.thrust) show(thruster);
-    else hide(thruster);
   }
 } 
 function asteroidsObservable1() {
